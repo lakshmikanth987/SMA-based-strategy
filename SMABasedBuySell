@@ -1,0 +1,45 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat May 16 06:42:30 2020
+
+@author: Lakshmikanth
+"""
+
+from datetime import datetime
+from nsepy import get_history
+import dateutil.relativedelta
+import pandas as pd
+import time
+#import talib
+
+
+to_date = datetime.now()
+to_date = datetime.strftime(to_date, '%Y,%m,%d %H,%M,%S')
+to_date = datetime.strptime(to_date, '%Y,%m,%d %H,%M,%S')
+from_date = to_date-dateutil.relativedelta.relativedelta(months = 48)
+t = time.localtime()
+current_time = time.strftime("_%H_%M", t)
+    
+def simpleMovingAverage(StockSymbol):
+    data = get_history(symbol=StockSymbol, 
+                       start =from_date , 
+                       end = to_date)
+    
+    data['SMA_50'] = data['Close'].rolling(200).mean()
+    
+    data.dropna(inplace=True)
+
+    fileName = StockSymbol + "HistoricalSMA" + str(current_time) + ".xlsx"
+    
+    with pd.ExcelWriter(str(fileName),  date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS', engine='xlsxwriter') as writer  : 
+        data.to_excel(writer , sheet_name = "Historical")
+    
+    last_element_closing = data['Close'].iloc[-1]
+    last_element_sma = data['SMA_50'].iloc[-1]
+    
+    if last_element_closing > last_element_sma :
+        print("BUY : " + str(StockSymbol))
+    else :
+        print("SELL : " + str(StockSymbol))
+
+simpleMovingAverage('RELIANCE')
